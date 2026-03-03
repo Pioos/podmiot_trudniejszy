@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Podmiot – Quiz Zaawansowany</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3350;
+    --text: #e8e6f0;
+    --muted: #7a7d96;
+    --accent: #f0c93a;
+    --green: #4ade80;
+    --red: #f87171;
+    --blue: #60a5fa;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 1rem 4rem;
+  }
+
+  /* starfield bg */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 10% 20%, rgba(240,201,58,.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 10%, rgba(255,255,255,.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 50% 70%, rgba(96,165,250,.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 30% 90%, rgba(255,255,255,.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 90% 60%, rgba(240,201,58,.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 20% 50%, rgba(255,255,255,.15) 0%, transparent 100%),
+      radial-gradient(2px 2px at 70% 40%, rgba(240,201,58,.15) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap { position: relative; z-index: 1; width: 100%; max-width: 720px; }
+
+  /* ── HEADER ── */
+  header {
+    text-align: center;
+    padding: 3.5rem 1rem 2.5rem;
+  }
+  .level-badge {
+    display: inline-flex; align-items: center; gap: .5rem;
+    background: rgba(240,201,58,.12);
+    border: 1px solid rgba(240,201,58,.3);
+    color: var(--accent);
+    font-size: .7rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    padding: .35rem 1rem;
+    border-radius: 2rem;
+    margin-bottom: 1.5rem;
+  }
+  .level-badge span { font-size: .9rem; }
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2.4rem, 6vw, 4.2rem);
+    line-height: 1.1;
+    letter-spacing: -.02em;
+  }
+  h1 em { font-style: italic; color: var(--accent); }
+  header p {
+    margin-top: .8rem;
+    color: var(--muted);
+    font-size: .9rem;
+    letter-spacing: .04em;
+  }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+  .stat {
+    flex: 1; min-width: 120px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: .8rem 1rem;
+    border-radius: 4px;
+    text-align: center;
+  }
+  .stat-val {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.6rem;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .stat-lbl { font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-top: .3rem; }
+
+  /* ── PROGRESS ── */
+  .progress-track {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-bottom: 2rem;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #f9a825);
+    border-radius: 2px;
+    transition: width .5s cubic-bezier(.4,0,.2,1);
+    width: 0%;
+  }
+
+  /* ── QUESTION CARD ── */
+  .q-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2rem;
+    margin-bottom: 1.2rem;
+    animation: slideUp .35s ease;
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .q-meta {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.2rem;
+  }
+  .q-num { font-size: .7rem; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+  .q-diff {
+    font-size: .65rem; letter-spacing: .12em; text-transform: uppercase;
+    padding: .2rem .7rem; border-radius: 1rem;
+  }
+  .diff-medium { background: rgba(96,165,250,.15); color: var(--blue); border: 1px solid rgba(96,165,250,.3); }
+  .diff-hard { background: rgba(248,113,113,.15); color: var(--red); border: 1px solid rgba(248,113,113,.3); }
+  .diff-expert { background: rgba(240,201,58,.15); color: var(--accent); border: 1px solid rgba(240,201,58,.3); }
+
+  .q-text {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.2rem;
+    line-height: 1.55;
+    margin-bottom: 1.5rem;
+  }
+  .q-text u { text-decoration-color: var(--accent); text-underline-offset: 3px; }
+
+  .sentence-box {
+    background: var(--surface2);
+    border-left: 3px solid var(--accent);
+    padding: 1rem 1.2rem;
+    margin-bottom: 1.5rem;
+    font-style: italic;
+    font-size: 1rem;
+    line-height: 1.7;
+    color: #ccc;
+    border-radius: 0 4px 4px 0;
+  }
+  .sentence-box strong { color: var(--text); font-style: normal; }
+
+  /* ── OPTIONS ── */
+  .options { display: grid; gap: .6rem; }
+  .opt {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    padding: .9rem 1.2rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .9rem;
+    color: var(--text);
+    text-align: left;
+    display: flex; align-items: flex-start; gap: .9rem;
+    transition: border-color .15s, background .15s;
+    line-height: 1.5;
+  }
+  .opt:hover:not(:disabled) { border-color: var(--accent); background: rgba(240,201,58,.06); }
+  .opt-key {
+    min-width: 1.6rem; height: 1.6rem;
+    border: 1.5px solid var(--border);
+    border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .72rem; font-weight: 600;
+    color: var(--muted);
+    flex-shrink: 0;
+    transition: all .15s;
+  }
+  .opt:hover:not(:disabled) .opt-key { border-color: var(--accent); color: var(--accent); }
+  .opt.correct { border-color: var(--green); background: rgba(74,222,128,.08); }
+  .opt.correct .opt-key { border-color: var(--green); color: var(--green); background: rgba(74,222,128,.15); }
+  .opt.wrong { border-color: var(--red); background: rgba(248,113,113,.08); }
+  .opt.wrong .opt-key { border-color: var(--red); color: var(--red); background: rgba(248,113,113,.15); }
+  .opt:disabled { cursor: default; }
+
+  /* ── FEEDBACK ── */
+  .feedback {
+    margin-top: 1.2rem;
+    padding: 1rem 1.2rem;
+    border-radius: 6px;
+    font-size: .875rem;
+    line-height: 1.7;
+    display: none;
+  }
+  .feedback.show { display: block; animation: fadeIn .3s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .feedback.ok { background: rgba(74,222,128,.08); border: 1px solid rgba(74,222,128,.25); }
+  .feedback.bad { background: rgba(248,113,113,.08); border: 1px solid rgba(248,113,113,.25); }
+  .feedback .fb-title { font-weight: 600; margin-bottom: .4rem; }
+  .feedback.ok .fb-title { color: var(--green); }
+  .feedback.bad .fb-title { color: var(--red); }
+
+  /* ── HINT ── */
+  .hint-btn {
+    background: none; border: 1px solid var(--border);
+    color: var(--muted); font-size: .75rem;
+    letter-spacing: .08em; text-transform: uppercase;
+    padding: .4rem .9rem; border-radius: 3px;
+    cursor: pointer; margin-top: .8rem;
+    transition: all .15s;
+  }
+  .hint-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .hint-box {
+    margin-top: .6rem; padding: .7rem 1rem;
+    background: rgba(96,165,250,.07);
+    border: 1px solid rgba(96,165,250,.2);
+    border-radius: 4px;
+    font-size: .82rem; color: var(--blue); line-height: 1.6;
+    display: none;
+  }
+  .hint-box.show { display: block; animation: fadeIn .25s ease; }
+
+  /* ── NAV ── */
+  .q-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; }
+  .btn-next {
+    background: var(--accent);
+    color: var(--bg);
+    border: none; padding: .75rem 2rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .85rem; font-weight: 600;
+    letter-spacing: .06em; text-transform: uppercase;
+    cursor: pointer; border-radius: 4px;
+    display: none;
+    transition: opacity .2s;
+  }
+  .btn-next:hover { opacity: .85; }
+  .btn-next.show { display: block; }
+  .streak { font-size: .8rem; color: var(--muted); }
+  .streak span { color: var(--accent); font-weight: 600; }
+
+  /* ── RESULTS ── */
+  #results {
+    display: none;
+    animation: slideUp .5s ease;
+  }
+  #results.show { display: block; }
+
+  .results-header {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+  }
+  .big-score {
+    font-family: 'DM Serif Display', serif;
+    font-size: 5rem;
+    line-height: 1;
+    color: var(--accent);
+  }
+  .big-score sub { font-size: 2rem; color: var(--muted); }
+  .result-grade {
+    display: inline-block;
+    margin-top: .8rem;
+    font-size: .75rem; letter-spacing: .2em; text-transform: uppercase;
+    padding: .3rem 1.2rem;
+    border-radius: 2rem;
+    border: 1px solid;
+  }
+  .result-msg-text {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.6rem; margin-top: 1rem; line-height: 1.3;
+  }
+  .result-sub { color: var(--muted); font-size: .88rem; margin-top: .5rem; }
+
+  .review-section h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.3rem; margin-bottom: 1rem;
+    color: var(--muted);
+    letter-spacing: -.01em;
+  }
+  .review-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1.1rem 1.2rem;
+    margin-bottom: .8rem;
+    font-size: .875rem; line-height: 1.7;
+  }
+  .review-item .ri-top { display: flex; gap: .6rem; margin-bottom: .5rem; }
+  .ri-icon { font-size: 1rem; }
+  .ri-q { font-weight: 500; }
+  .ri-answers { font-size: .8rem; color: var(--muted); }
+  .ri-correct { color: var(--green); }
+  .ri-wrong-ans { color: var(--red); }
+
+  .btn-retry {
+    display: block; width: 100%;
+    background: var(--accent); color: var(--bg);
+    border: none; padding: 1rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .9rem; font-weight: 600;
+    letter-spacing: .08em; text-transform: uppercase;
+    cursor: pointer; border-radius: 6px;
+    margin-top: 1.5rem;
+    transition: opacity .2s;
+  }
+  .btn-retry:hover { opacity: .85; }
+
+  /* dots */
+  .dots { display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--border);
+    transition: background .3s;
+  }
+  .dot.done-ok { background: var(--green); }
+  .dot.done-bad { background: var(--red); }
+  .dot.current { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="level-badge"><span>⚡</span> Poziom zaawansowany</div>
+  <h1>Quiz: <em>Podmiot</em></h1>
+  <p>Klasa VI · 15 pytań · Trudniejsze przypadki</p>
+</header>
+
+<div class="stats-bar" id="stats-bar">
+  <div class="stat"><div class="stat-val" id="s-score">0</div><div class="stat-lbl">Punkty</div></div>
+  <div class="stat"><div class="stat-val" id="s-streak">0</div><div class="stat-lbl">Seria 🔥</div></div>
+  <div class="stat"><div class="stat-val" id="s-left">15</div><div class="stat-lbl">Pozostało</div></div>
+</div>
+
+<div class="dots" id="dots"></div>
+<div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+
+<div id="quiz-body"></div>
+<div id="results"></div>
+
+</div>
+
+<script>
+const questions = [
+  {
+    diff: 'medium',
+    q: 'Wskaż <u>podmiot</u> w zdaniu:',
+    sentence: 'Wysoki, smukły <strong>świerk</strong> góruje nad całym lasem.',
+    opts: ['Wysoki, smukły', 'świerk', 'góruje', 'lasem'],
+    ans: 1,
+    hint: 'Zadaj pytanie do orzeczenia: co góruje? Uważaj – przydawki (określenia) to nie podmiot!',
+    exp: '<b>Świerk</b> to podmiot gramatyczny (rzeczownik w mianowniku). „Wysoki, smukły" to przydawki – określają podmiot, ale nim nie są.'
+  },
+  {
+    diff: 'hard',
+    q: 'Które zdanie zawiera <u>podmiot domyślny</u>?',
+    opts: [
+      'Nauczyciel tłumaczy zadanie.',
+      'Uczniowie siedzą cicho.',
+      'Piszemy klasówkę z polskiego.',
+      'Dzieci i rodzice przyszli na zebranie.'
+    ],
+    ans: 2,
+    hint: 'Podmiot domyślny to taki, który nie jest wymówiony, ale wynika z formy czasownika.',
+    exp: '„<b>Piszemy</b>" – forma czasownika wskazuje, że podmiotem jest „my" (1. os. l. mn.), ale nie wypowiadamy go wprost. To podmiot domyślny.'
+  },
+  {
+    diff: 'hard',
+    q: 'W zdaniu „<i>Nie słychać żadnych odgłosów</i>" podmiot jest:',
+    opts: [
+      'gramatyczny – „odgłosów"',
+      'domyślny – wynika z kontekstu',
+      'logiczny – „odgłosów" w dopełniaczu',
+      'zdanie jest bezpodmiotowe'
+    ],
+    ans: 3,
+    hint: 'Sprawdź: czy można zapytać „kto? co?" do orzeczenia? Czy jest jakikolwiek wykonawca?',
+    exp: '„Nie słychać" to orzeczenie bezpodmiotowe – nie ma wykonawcy ani w mianowniku, ani domyślnego. Zdanie jest <b>bezpodmiotowe</b>.'
+  },
+  {
+    diff: 'hard',
+    q: 'Wskaż zdanie z <u>podmiotem logicznym</u>:',
+    opts: [
+      'Mama kupiła nowe buty.',
+      'Brakuje mi słów z wrażenia.',
+      'Dzieci bawią się na podwórku.',
+      'Jadę na wakacje.'
+    ],
+    ans: 1,
+    hint: 'Podmiot logiczny to wykonawca czynności, który NIE stoi w mianowniku.',
+    exp: '„<b>Brakuje mi słów</b>" – „mi" (= mnie) to logiczny wykonawca, ale stoi w celowniku, nie w mianowniku. To podmiot logiczny.'
+  },
+  {
+    diff: 'expert',
+    q: 'W zdaniu „<i>Pięciu chłopców wyszło na boisko</i>" podmiot to wyrażenie <u>pięciu chłopców</u>. Jaki to rodzaj podmiotu?',
+    opts: [
+      'Podmiot gramatyczny prosty',
+      'Podmiot szeregowy',
+      'Podmiot wyrażony liczebnikiem z rzeczownikiem (grupy liczebnikowo-rzeczownikowej)',
+      'Podmiot domyślny'
+    ],
+    ans: 2,
+    hint: 'Gdy podmiot składa się z liczebnika i rzeczownika w dopełniaczu, tworzy tzw. grupę liczebnikowo-rzeczownikową.',
+    exp: '„<b>Pięciu chłopców</b>" to podmiot wyrażony <b>grupą liczebnikowo-rzeczownikową</b>. Rzeczownik stoi w dopełniaczu, ale całe wyrażenie pełni funkcję podmiotu.'
+  },
+  {
+    diff: 'medium',
+    q: 'Ile podmiotów jest w zdaniu: „<i>Ania, Marek i ich pies wybiegli na łąkę</i>"?',
+    opts: ['Jeden podmiot szeregowy (Ania, Marek i ich pies)', 'Dwa podmioty', 'Trzy oddzielne podmioty', 'Brak podmiotu'],
+    ans: 0,
+    hint: 'Kilka wyrazów połączonych spójnikiem i tworzą JEDEN podmiot szeregowy.',
+    exp: '„<b>Ania, Marek i ich pies</b>" to <b>jeden podmiot szeregowy</b> – trzy elementy połączone w jedną całość gramatyczną.'
+  },
+  {
+    diff: 'hard',
+    q: 'W zdaniu „<i>Grzmi</i>" podmiot jest:',
+    opts: [
+      'Domyślny – „ono" (niebo)',
+      'Gramatyczny – „grzmot"',
+      'Zdanie jest bezpodmiotowe',
+      'Logiczny'
+    ],
+    ans: 2,
+    hint: 'Zjawiska atmosferyczne często tworzą zdania bezpodmiotowe.',
+    exp: '„<b>Grzmi</b>" to zdanie bezpodmiotowe. Zjawisko atmosferyczne nie ma wykonawcy – nie można zapytać kto? co? grzmi.'
+  },
+  {
+    diff: 'expert',
+    q: 'Oceń związek zgody w zdaniu: „<i>Pięcioro dzieci bawiło się na placu</i>". Orzeczenie jest w liczbie…',
+    opts: [
+      'mnogiej, co jest błędem gramatycznym',
+      'pojedynczej, rodzaju nijakiego – poprawnie',
+      'pojedynczej, rodzaju męskiego – poprawnie',
+      'mnogiej, co jest poprawne'
+    ],
+    ans: 1,
+    hint: 'Grupy liczebnikowo-rzeczownikowe z liczebnikiem zbiorowym (pięcioro) wymagają orzeczenia w l. poj., r. nijakim.',
+    exp: '„<b>Bawiło się</b>" – liczba poj., rodzaj nijaki. Przy podmiocie z liczebnikiem zbiorowym (pięcioro, dwoje…) orzeczenie przyjmuje formę <b>l. poj., r. nijakiego</b>. Zdanie jest gramatycznie poprawne.'
+  },
+  {
+    diff: 'hard',
+    q: 'Zaznacz zdanie, w którym wyróżniony wyraz <u>NIE jest</u> podmiotem:',
+    opts: [
+      'Na niebie świeciły <u>gwiazdy</u>.',
+      '<u>Ona</u> napisała świetne wypracowanie.',
+      'Dali mu <u>nagrodę</u>.',
+      '<u>Wiatr</u> przewrócił drzewo.'
+    ],
+    ans: 2,
+    hint: 'Zadaj pytanie „kto? co?" do orzeczenia każdego zdania.',
+    exp: '„<b>Nagrodę</b>" to dopełnienie (komu? czemu? co? – biernik), nie podmiot. Podmiot byłby odpowiedzią na pytanie <em>kto? co? dał nagrodę?</em> – a tego w zdaniu brak (podmiot domyślny „oni/one").'
+  },
+  {
+    diff: 'expert',
+    q: 'W zdaniu „<i>Ciemno tu i zimno</i>" typ zdania to:',
+    opts: [
+      'Zdanie z podmiotem domyślnym „jest"',
+      'Zdanie z podmiotem logicznym',
+      'Zdanie bezpodmiotowe z orzecznikiem',
+      'Zdanie z podmiotem szeregowym'
+    ],
+    ans: 2,
+    hint: '„Ciemno" i „zimno" to orzeczniki, nie podmioty. Brak wykonawcy.',
+    exp: '„<b>Ciemno i zimno</b>" to <b>zdanie bezpodmiotowe</b>. „Ciemno", „zimno" pełnią funkcję orzecznika, opisując stan otoczenia. Nie ma wykonawcy, którego można by wskazać pytaniem kto? co?'
+  },
+  {
+    diff: 'medium',
+    q: 'Wyróżniony wyraz jest podmiotem w zdaniu:',
+    opts: [
+      'Słyszę <u>muzykę</u> z sąsiedniego pokoju.',
+      '<u>Muzyka</u> dobiega z sąsiedniego pokoju.',
+      'Słucham <u>muzyki</u> w słuchawkach.',
+      'Podoba mi się ta <u>muzyka</u>.'
+    ],
+    ans: 1,
+    hint: 'Podmiot stoi w mianowniku. Sprawdź przypadek każdego wyróżnionego wyrazu.',
+    exp: '„<b>Muzyka</b>" w zdaniu B to podmiot – stoi w mianowniku (Co dobiega? → Muzyka). W pozostałych zdaniach „muzyka/muzykę/muzyki" są w innych przypadkach (biernik, dopełniacz).'
+  },
+  {
+    diff: 'hard',
+    q: 'W zdaniu „<i>Komuś wypadł portfel</i>" wyraz „<i>komuś</i>" to:',
+    opts: [
+      'Podmiot gramatyczny',
+      'Podmiot logiczny (osoba w celowniku)',
+      'Dopełnienie',
+      'Okolicznik'
+    ],
+    ans: 1,
+    hint: 'Zastanów się, w jakim przypadku stoi „komuś". Celownik: komu? czemu?',
+    exp: '„<b>Komuś</b>" (= komu?) stoi w celowniku. To <b>podmiot logiczny</b> – faktyczny właściciel portfela, choć nie w mianowniku. Podmiotem gramatycznym jest „portfel" (co wypadło?).'
+  },
+  {
+    diff: 'expert',
+    q: 'Które zdanie ma podmiot w postaci bezokolicznika?',
+    opts: [
+      'Lubię chodzić do kina.',
+      'Chodzić do kina to przyjemność.',
+      'Idę do kina.',
+      'W kinie jest przyjemnie.'
+    ],
+    ans: 1,
+    hint: 'Bezokolicznik może pełnić różne funkcje. Kiedy odpowiada na pytanie „co jest…?".',
+    exp: '„<b>Chodzić</b> do kina to przyjemność." – bezokolicznik „chodzić" pełni tu funkcję <b>podmiotu</b> (Co jest przyjemnością? → chodzić do kina). Bezokolicznik jako podmiot to rzadkie, ale poprawne użycie.'
+  },
+  {
+    diff: 'hard',
+    q: 'W zdaniu „<i>Przez okno widać było góry</i>" podmiot jest:',
+    opts: [
+      'Gramatyczny – „góry" w mianowniku',
+      'Domyślny – ktoś widział góry',
+      'Logiczny – „okno" w narzędniku',
+      'Zdanie jest bezpodmiotowe'
+    ],
+    ans: 3,
+    hint: 'Czy „góry" stoi w mianowniku? Sprawdź przypadek: widać było kogo? co? → to biernik!',
+    exp: '„<b>Widać było</b>" to orzeczenie bezpodmiotowe. „Góry" stoi w bierniku (widać co? → góry), nie w mianowniku. Zdanie jest <b>bezpodmiotowe</b>.'
+  },
+  {
+    diff: 'expert',
+    q: 'Które twierdzenie o podmiocie jest <u>FAŁSZYWE</u>?',
+    opts: [
+      'Podmiot może być wyrażony bezokolicznikiem.',
+      'Podmiot gramatyczny zawsze stoi w mianowniku.',
+      'Każde zdanie polskie musi mieć podmiot.',
+      'Podmiot szeregowy może łączyć rzeczowniki i zaimki.'
+    ],
+    ans: 2,
+    hint: 'Przypomnij sobie zdania bezpodmiotowe: „Grzmi", „Ciemno", „Widać góry"...',
+    exp: 'Twierdzenie fałszywe: „<b>każde zdanie musi mieć podmiot</b>". W języku polskim istnieją <b>zdania bezpodmiotowe</b> (np. „Grzmi", „Nie widać drogi", „Ciemno tu"), które są poprawne gramatycznie bez podmiotu.'
+  }
+];
+
+let current = 0, score = 0, streak = 0, maxStreak = 0;
+let answered = new Array(questions.length).fill(false);
+let userAnswers = new Array(questions.length).fill(null);
+let hintUsed = new Array(questions.length).fill(false);
+
+const diffLabel = { medium: 'Średni', hard: 'Trudny', expert: 'Ekspercki' };
+const diffClass = { medium: 'diff-medium', hard: 'diff-hard', expert: 'diff-expert' };
+
+function initQuiz() {
+  current = 0; score = 0; streak = 0; maxStreak = 0;
+  answered = new Array(questions.length).fill(false);
+  userAnswers = new Array(questions.length).fill(null);
+  hintUsed = new Array(questions.length).fill(false);
+  document.getElementById('results').classList.remove('show');
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('quiz-body').style.display = 'block';
+  document.getElementById('stats-bar').style.display = 'flex';
+  updateStats();
+  renderDots();
+  renderQuestion();
+}
+
+function updateStats() {
+  document.getElementById('s-score').textContent = score;
+  document.getElementById('s-streak').textContent = streak;
+  document.getElementById('s-left').textContent = questions.length - current;
+}
+
+function renderDots() {
+  const c = document.getElementById('dots');
+  c.innerHTML = '';
+  questions.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === current ? ' current' : answered[i] ? (userAnswers[i] === questions[i].ans ? ' done-ok' : ' done-bad') : '');
+    c.appendChild(d);
+  });
+  const fill = document.getElementById('progress-fill');
+  fill.style.width = (current / questions.length * 100) + '%';
+}
+
+function renderQuestion() {
+  const q = questions[current];
+  const keys = ['A','B','C','D'];
+  document.getElementById('quiz-body').innerHTML = `
+    <div class="q-card">
+      <div class="q-meta">
+        <div class="q-num">Pytanie ${current+1} / ${questions.length}</div>
+        <div class="q-diff ${diffClass[q.diff]}">${diffLabel[q.diff]}</div>
+      </div>
+      <div class="q-text">${q.q}</div>
+      ${q.sentence ? `<div class="sentence-box">${q.sentence}</div>` : ''}
+      <div class="options">
+        ${q.opts.map((o,i) => `
+          <button class="opt" onclick="answer(${i})" id="opt-${i}">
+            <span class="opt-key">${keys[i]}</span> ${o}
+          </button>`).join('')}
+      </div>
+      <div>
+        <button class="hint-btn" onclick="showHint()" id="hint-btn">💡 Podpowiedź</button>
+        <div class="hint-box" id="hint-box">${q.hint}</div>
+      </div>
+      <div class="feedback" id="feedback"></div>
+    </div>
+    <div class="q-nav">
+      <div class="streak">Seria: <span id="streak-disp">${streak}</span> 🔥</div>
+      <button class="btn-next" id="btn-next" onclick="nextQ()">
+        ${current < questions.length-1 ? 'Następne →' : 'Wyniki →'}
+      </button>
+    </div>`;
+}
+
+function showHint() {
+  hintUsed[current] = true;
+  document.getElementById('hint-box').classList.add('show');
+  document.getElementById('hint-btn').style.display = 'none';
+}
+
+function answer(idx) {
+  if (answered[current]) return;
+  answered[current] = true;
+  userAnswers[current] = idx;
+  const q = questions[current];
+  const correct = idx === q.ans;
+
+  if (correct) {
+    score++;
+    streak++;
+    if (streak > maxStreak) maxStreak = streak;
+  } else {
+    streak = 0;
+  }
+
+  document.querySelectorAll('.opt').forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === q.ans) btn.classList.add('correct');
+    else if (i === idx && !correct) btn.classList.add('wrong');
+  });
+
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback show ' + (correct ? 'ok' : 'bad');
+  fb.innerHTML = `<div class="fb-title">${correct ? '✅ Poprawnie!' : '❌ Błąd'}</div>${q.exp}`;
+  document.getElementById('btn-next').classList.add('show');
+  document.getElementById('streak-disp').textContent = streak;
+  updateStats();
+  renderDots();
+}
+
+function nextQ() {
+  if (current < questions.length - 1) {
+    current++;
+    updateStats();
+    renderDots();
+    renderQuestion();
+  } else {
+    showResults();
+  }
+}
+
+function showResults() {
+  document.getElementById('quiz-body').style.display = 'none';
+  document.getElementById('stats-bar').style.display = 'none';
+  document.getElementById('progress-fill').style.width = '100%';
+
+  const pct = Math.round(score / questions.length * 100);
+  let grade, gradeStyle, msg, sub;
+  if (pct === 100) {
+    grade = '★ Celujący'; gradeStyle = 'color:var(--accent);border-color:var(--accent);background:rgba(240,201,58,.1)';
+    msg = 'Mistrzowskie opanowanie tematu!';
+    sub = 'Wszystkie pytania poprawnie – nawet eksperckie. Brawo!';
+  } else if (pct >= 85) {
+    grade = 'Bardzo dobry'; gradeStyle = 'color:var(--green);border-color:var(--green);background:rgba(74,222,128,.1)';
+    msg = 'Znakomity wynik!';
+    sub = 'Temat opanowany bardzo dobrze. Kilka szczegółów do dopracowania.';
+  } else if (pct >= 70) {
+    grade = 'Dobry'; gradeStyle = 'color:var(--blue);border-color:var(--blue);background:rgba(96,165,250,.1)';
+    msg = 'Dobra robota!';
+    sub = 'Podstawy są – warto poćwiczyć trudniejsze przypadki.';
+  } else if (pct >= 50) {
+    grade = 'Dostateczny'; gradeStyle = 'color:orange;border-color:orange;background:rgba(255,165,0,.1)';
+    msg = 'Jest nad czym pracować.';
+    sub = 'Wróć do podsumowania i spróbuj ponownie!';
+  } else {
+    grade = 'Niedostateczny'; gradeStyle = 'color:var(--red);border-color:var(--red);background:rgba(248,113,113,.1)';
+    msg = 'Czas na solidną powtórkę!';
+    sub = 'Nie zniechęcaj się – wróć do materiału i spróbuj jeszcze raz.';
+  }
+
+  const reviewHTML = questions.map((q, i) => {
+    const ok = userAnswers[i] === q.ans;
+    return `<div class="review-item">
+      <div class="ri-top">
+        <span class="ri-icon">${ok ? '✅' : '❌'}</span>
+        <span class="ri-q">Pyt. ${i+1}: ${q.q.replace(/<[^>]+>/g,'')}</span>
+      </div>
+      <div class="ri-answers">
+        ${!ok ? `<span class="ri-wrong-ans">Twoja odpowiedź: ${q.opts[userAnswers[i]] ?? '—'}</span><br>` : ''}
+        <span class="ri-correct">✓ Poprawna: ${q.opts[q.ans]}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  const el = document.getElementById('results');
+  el.innerHTML = `
+    <div class="results-header">
+      <div class="big-score">${score}<sub>/${questions.length}</sub></div>
+      <div class="result-grade" style="${gradeStyle}">${grade}</div>
+      <div class="result-msg-text">${msg}</div>
+      <div class="result-sub">${sub}</div>
+      <div class="result-sub" style="margin-top:.5rem">Najlepsza seria: <b style="color:var(--accent)">${maxStreak} 🔥</b></div>
+    </div>
+    <div class="review-section">
+      <h3>Przegląd odpowiedzi</h3>
+      ${reviewHTML}
+    </div>
+    <button class="btn-retry" onclick="initQuiz()">↺ Spróbuj jeszcze raz</button>`;
+
+  el.style.display = 'block';
+  el.classList.add('show');
+}
+
+initQuiz();
+</script>
+</body>
+</html>
